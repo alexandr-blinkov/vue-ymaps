@@ -6,6 +6,7 @@
     app
   >
     <v-list dense nav class="py-1">
+      
        <v-list-item :class="miniVariant">
         <v-list-item-content>
           <v-list-item-subtitle>{{
@@ -13,13 +14,22 @@
           }}</v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
-
+  
       <v-list-item link @click="changeDefaultDialog">
+        <v-list-item-icon>
+          <v-icon>mdi-database-plus</v-icon>
+        </v-list-item-icon>
+        <v-list-item-content>
+          <v-list-item-title >Добавить источник</v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+
+      <v-list-item link @click="changeFavoriteDialog">
         <v-list-item-action>
-          <v-icon>mdi-database-arrow-right</v-icon>
+          <v-icon>mdi-database-sync</v-icon>
         </v-list-item-action>
         <v-list-item-content>
-          <v-list-item-title>Изменить источник</v-list-item-title>
+          <v-list-item-title>Избранные источники</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
 
@@ -46,6 +56,9 @@ export default {
   methods: {
     changeDefaultDialog() {
       this.$emit('change')
+    },
+    changeFavoriteDialog() {
+      this.$emit('changeFavorite')
     }
   },
 };

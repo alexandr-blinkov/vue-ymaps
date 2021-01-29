@@ -32,7 +32,7 @@
                 <v-list-item>
                   <v-list-item-content>
                     <v-list-item-title>Название датчика</v-list-item-title>
-                    <v-list-item-subtitle>{{dataBillboard.name}}</v-list-item-subtitle>
+                    <v-list-item-subtitle>{{dataBillboard.deviceName}}</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
                 </v-col>
@@ -64,7 +64,7 @@
                 <v-list-item>
                   <v-list-item-content>
                     <v-list-item-title>Дата и время</v-list-item-title>
-                    <v-list-item-subtitle>{{dataBillboard.time_value}}</v-list-item-subtitle>
+                    <v-list-item-subtitle>{{dataBillboard.dateTime}}</v-list-item-subtitle>
                   </v-list-item-content>
                 </v-list-item>
                 </v-col>
@@ -100,13 +100,12 @@
   <v-dialog
       v-model="defaultDialog"
       persistent
-      max-width="500"
+      max-width="950"
       class="m-0"
       style="overflow: hidden"
     >
       <v-card style="overflow: hidden">
         <v-card-actions class="mt-2">
-          <div class="ml-3">Изменение источника данных</div>
           <v-spacer></v-spacer>
             <v-icon 
             class="ml-5"
@@ -149,17 +148,93 @@
                       </v-card-text>
                 </v-row>
                       <v-card-actions class="mt-1 mb-0">
+                        <v-switch
+                          v-model="switchSave"
+                          :label="`Добавить в избранное: ${titleSwithSave(switchSave)}`"
+                        ></v-switch>
                         <v-spacer></v-spacer>
                         <v-btn
                           color="primary"
                           :disabled="!valid"
                           @click="dataBaseSetting()"
-                          >Подключить</v-btn
+                          >Подключиться</v-btn
                         >
                       </v-card-actions>
             </v-card-text>
       </v-card>
     </v-dialog>
+
+
+    <v-dialog
+      v-model="changeFavorite"
+      persistent
+      max-width="950"
+      class="m-0"
+      style="overflow: hidden"
+    >
+      <v-card style="overflow: hidden">
+        <v-card-actions>
+          <v-text-field
+            v-model="search"
+            append-icon="mdi-magnify"
+            label="Поиск"
+            single-line
+          ></v-text-field>
+          <v-spacer></v-spacer>
+            <v-icon 
+            class="ml-5"
+            color="red darken-1"
+            text
+            @click="closeFavoriteDialog()"
+            >mdi-close</v-icon>
+        </v-card-actions>
+        
+        <v-data-table
+          :headers="headersFavorites"
+          :items="itemsFavorites"
+          :search="search"
+          class="elevation-1"
+          :footerProps="{
+            itemsPerPageText: 'Количество на странице',
+            itemsPerPageAllText: 'Все',
+          }"
+        >
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon color="primary" dark v-bind="attrs" v-on="on">
+                  <v-icon small class="mr-2" @click="connectFavorite(item)">
+                    mdi-database-arrow-right
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Открыть</span>
+            </v-tooltip>
+
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon color="red" dark v-bind="attrs" v-on="on">
+                  <v-icon small class="mr-2" @click="deleteFavorite(item)">
+                    mdi-database-off
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Удалить из избранных</span>
+            </v-tooltip>
+          </template>
+
+          <template v-slot:[`footer.page-text`]="{ pageStart, itemsLength, pageStop }">
+            {{ pageStart }}-{{ pageStop }} из {{ itemsLength }}
+          </template>
+
+          <template v-slot:no-data>
+            <span>Записи отсутствуют</span>
+          </template>
+
+        </v-data-table>     
+      </v-card>
+    </v-dialog>
+
     <yandex-map
       zoom="10"
       style="width: 100%; max-width: 100%; height: 100%;"
@@ -186,11 +261,13 @@ import LineChart from './LineChart.vue';
 export default {
   name: "HomeMaps",
   components: { yandexMap, ymapMarker, LineChart },
-  props: ['defaultDialog'],
+  props: ['defaultDialog', 'changeFavorite'],
   data() {
     return {
+      switchSave: false,
       dialog: false,
       dialogTest: false,
+      search: '',
       dataBillboard: {},
       coords: [56.6375, 60.824],
       datacollectionChart: {},
@@ -199,12 +276,21 @@ export default {
         maintainAspectRatio: true,
       },
       surfaceNewFront: [],
+      headersFavorites: [
+        { text: 'Номер'         , value: 'id'       },
+        { text: 'Хост'          , value: 'host'     },
+        { text: 'Логин'         , value: 'login'    },
+        { text: 'Пароль'        , value: 'password' },
+        { text: 'Дата создания' , value: 'date'     },
+        { text: 'Действия'      , value: 'actions'  },
+      ],
+      itemsFavorites: [],
       surfaceNew: [
         {
           id: 88,
           id_login: 3,
-          name: 'ESP_NMTM_103901',
-          time_value: "2021-01-23 02:32:06",
+          deviceName: 'ESP_NMTM_103901',
+          dateTime: "2021-01-23 02:32:06",
           latitude: 56.6375,
           longitude: 60.824,
           humidity: 0,
@@ -232,9 +318,7 @@ export default {
     };
   },
   async mounted() {
-  setInterval(async () => {
-    await loadYmap({ ...this.settings, debug: true });
-  }, 3000)
+    this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData')) ? JSON.parse(localStorage.getItem('favoritesData')) : []
 
     let DbHost = localStorage.getItem('DbHost')
     let DbLogin = localStorage.getItem('DbLogin')
@@ -262,25 +346,77 @@ export default {
     surfaceNew: function() {
       this.formatterData();
     },
+  changeFavorite: function() {
+      this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData')) ? JSON.parse(localStorage.getItem('favoritesData')) : []
+    }
   },
   methods: {
-    async dataBaseSetting() {
-      let host = this.host
-      let login = this.login
-      let password = this.password
+    async connectFavorite(item) {
+      let host     = item.host,
+          login    = item.login, 
+          password = item.password,
+          isSave   = null
 
-      let formDb = {
-        host: host,
-        login: login,
-        password: password
-      };
-      await this.$store.dispatch("getDataSensors", formDb)
+      let formChangeSource = {host, login, password, isSave};
+
+      await this.$store.dispatch("getDataSensors", formChangeSource)
       let dataSensor = await this.$store.getters.dataSensors;
       this.surfaceNew = dataSensor;
+
+      this.host       = ''
+      this.login      = ''
+      this.password   = ''
+      this.switchSave = false
+      
+      this.closeDialog()
+    },
+    deleteFavorite(item) {
+      let favoritesArr  = JSON.parse(localStorage.getItem('favoritesData'))
+      let favoriteFinal = favoritesArr.filter((e) => {
+        if (e.id != item.id) {
+          return e;
+        }
+      })
+      let finallArr = favoriteFinal.map((e, index) => {
+                return {
+                  id: index + 1,
+                  host: e.host,
+                  login: e.login,
+                  password: e.password,
+                  date: e.date
+                }
+              })
+      localStorage.removeItem('favoritesData')
+      localStorage.setItem('favoritesData', JSON.stringify(finallArr))
+      this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData'))
+    },
+    titleSwithSave(isSwitch) {
+      return isSwitch ? 'Да' : 'Нет';
+    },
+    async dataBaseSetting() {
+      let host     = this.host,
+          login    = this.login, 
+          password = this.password,
+          isSave   = this.switchSave
+
+      let formChangeSource = {host, login, password, isSave};
+
+      await this.$store.dispatch("getDataSensors", formChangeSource)
+      let dataSensor = await this.$store.getters.dataSensors;
+      this.surfaceNew = dataSensor;
+
+      this.host       = ''
+      this.login      = ''
+      this.password   = ''
+      this.switchSave = false
+      
       this.closeDialog()
     },
     closeDialog() {
       this.$emit('close')
+    },
+    closeFavoriteDialog() {
+      this.$emit('closeFavorite')
     },
     async updateData(dataSensors) {
         await this.$store.dispatch("getDataSensors");
@@ -294,7 +430,7 @@ export default {
       let i;
 
       for(i = 0; i < dataSensor.length; i++) {
-          let yourObjId = dataSensor[i]['name'];
+          let yourObjId = dataSensor[i]['deviceName'];
           myHash[yourObjId] = dataSensor[i];
       }
 
@@ -307,7 +443,7 @@ export default {
       this.surfaceNewFront = arr;
     },
     drawerOpen(dataBillboard) {
-      this.setChartData(dataBillboard.name);
+      this.setChartData(dataBillboard.deviceName);
       this.dialog = !this.dialog
       this.dataBillboard = dataBillboard
     },
@@ -317,25 +453,25 @@ export default {
       let arrPressure = [];
 
       this.surfaceNew.forEach(e => {
-        if (e.name === nameSensor) {
+        if (e.deviceName === nameSensor) {
             arrGraph.push({
-              x: e.time_value,
+              x: e.dateTime,
               y: e.values.temperature
             })
         }
       })
       this.surfaceNew.forEach(e => {
-        if (e.name === nameSensor) {
+        if (e.deviceName === nameSensor) {
             arrHumidity.push({
-              x: e.time_value,
+              x: e.dateTime,
               y: e.values.humidity
             })
         }
       })
       this.surfaceNew.forEach(e => {
-        if (e.name === nameSensor && +e.values.pressure) {
+        if (e.deviceName === nameSensor && +e.values.pressure) {
             arrPressure.push({
-              x: e.time_value,
+              x: e.dateTime,
               y: e.values.pressure
             })
         }
