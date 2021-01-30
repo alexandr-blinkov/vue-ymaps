@@ -6,8 +6,16 @@ import store from './store'
 import vuetify from "./plugins/vuetify"
 import '@mdi/font/css/materialdesignicons.css'
 import dateFilter from './filters/date-filter'
+import VuetifyDialog from "vuetify-dialog";
+import "vuetify-dialog/dist/vuetify-dialog.min.css";
 
 Vue.config.productionTip = false
+
+Vue.use(VuetifyDialog, {
+  context: {
+    vuetify
+  }
+});
 
 Vue.use(vuetify, {
   context: {

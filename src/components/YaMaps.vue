@@ -20,7 +20,7 @@
             >mdi-close</v-icon>
         </v-card-actions>
         <v-row justify-content="center" style="align-items: center; display: flex">
-          <v-col cols="5">
+          <v-col cols="12" xl="5" md="5" lg="5" sm="12" xs="12">
             <v-card-text>
               <v-row>
                 <v-col cols="12" style="padding: 0px">
@@ -87,7 +87,7 @@
               </v-row>
             </v-card-text>
           </v-col>
-          <v-col cols="7">
+          <v-col cols="12" xl="7" md="7" lg="7" sm="12" xs="12">
             <div class="mr-5 mb-5 mt-5 ml-5 overflow-hidden" style="weight: 100%; height: 100%">
               <line-chart :options="optionsLine" :chart-data="datacollectionChart"/>
             </div>
@@ -98,6 +98,59 @@
   </v-row>
 
   <v-dialog
+      v-model="changeNow"
+      persistent
+      max-width="950"
+      class="m-0"
+      style="overflow: hidden"
+    >
+      <v-card style="overflow: hidden">
+        <v-card-actions class="mt-5">
+          <v-spacer></v-spacer>
+            <v-icon 
+            class="ml-5"
+            color="red darken-1"
+            text
+            @click="closeNowDialog()"
+            >mdi-close</v-icon>
+        </v-card-actions>
+        <v-row>
+          <v-col>
+        <h2>Информация о текущем подключении</h2>
+                  <br>
+                  <div class="ml-6 mr-6 mb-6">
+                    <hr>
+                  </div>
+            <v-card-text>
+                <v-row>
+                  <v-list-item>
+                  <v-list-item-content>
+                    <v-list-item-title>Хост</v-list-item-title>
+                    <v-list-item-subtitle>{{DbHost}}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item>
+                  <v-list-item-content>
+                    <v-list-item-title>Логин</v-list-item-title>
+                    <v-list-item-subtitle>{{DbLogin}}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item>
+                  <v-list-item-content>
+                    <v-list-item-title>Пароль</v-list-item-title>
+                    <v-list-item-subtitle>{{DbPassword}}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>  
+                      <v-card-actions class="mt-1 mb-0">
+                      </v-card-actions>
+                </v-row>
+            </v-card-text>
+          </v-col>
+        </v-row>
+      </v-card>
+    </v-dialog>
+
+  <v-dialog
       v-model="defaultDialog"
       persistent
       max-width="950"
@@ -105,7 +158,7 @@
       style="overflow: hidden"
     >
       <v-card style="overflow: hidden">
-        <v-card-actions class="mt-2">
+        <v-card-actions class="mt-5">
           <v-spacer></v-spacer>
             <v-icon 
             class="ml-5"
@@ -124,7 +177,7 @@
                             name="host"
                             type="host"
                             v-model.trim="host"
-                            :rules="rules.form"
+                            :rules="rules.host"
                           ></v-text-field>
 
                           <v-text-field
@@ -140,7 +193,7 @@
                             prepend-icon="mdi-lock"
                             label="Пароль"
                             name="password"
-                            type="password"
+                            type="text"
                             v-model.trim="password"
                             :rules="rules.form"
                           ></v-text-field>
@@ -255,27 +308,44 @@
 </template>
 
 <script>
-import { yandexMap, ymapMarker, loadYmap } from "vue-yandex-maps";
-import LineChart from './LineChart.vue';
+import { yandexMap, ymapMarker } from "vue-yandex-maps";
+import LineChart                 from './LineChart.vue';
 
 export default {
-  name: "HomeMaps",
+  name:       'HomeMaps',
   components: { yandexMap, ymapMarker, LineChart },
-  props: ['defaultDialog', 'changeFavorite'],
+  props:      ['defaultDialog', 'changeFavorite', 'changeNow'],
   data() {
     return {
-      switchSave: false,
-      dialog: false,
-      dialogTest: false,
-      search: '',
-      dataBillboard: {},
-      coords: [56.6375, 60.824],
+      switchSave:          false,
+      dialog:              false,
+      dialogTest:          false,
+      valid:               false,
+      DbHost:              '',
+      DbLogin:             '',
+      DbPassword:          '',
+      host:                '',
+      login:               '',
+      password:            '',
+      search:              '',
       datacollectionChart: {},
+      dataBillboard:       {},
+      itemsFavorites:      [],
+      surfaceNewFront:     [],
+      coords:              [56.6375, 60.824],
       optionsLine: {
-        responsive: false,
+        responsive:          true,
         maintainAspectRatio: true,
       },
-      surfaceNewFront: [],
+      rules: {
+        form: [
+          (v) => !!v || "Поле не может быть пустым",
+        ],
+        host: [
+          (v) => RegExp('https?:\\/\\/').test(v) || "Укажите протокол (http:// или https://)",
+          (v) => !!v || "Поле не может быть пустым",
+        ]
+      },
       headersFavorites: [
         { text: 'Номер'         , value: 'id'       },
         { text: 'Хост'          , value: 'host'     },
@@ -284,50 +354,39 @@ export default {
         { text: 'Дата создания' , value: 'date'     },
         { text: 'Действия'      , value: 'actions'  },
       ],
-      itemsFavorites: [],
       surfaceNew: [
         {
-          id: 88,
-          id_login: 3,
+          id:         88,
+          id_login:   3,
           deviceName: 'ESP_NMTM_103901',
-          dateTime: "2021-01-23 02:32:06",
-          latitude: 56.6375,
-          longitude: 60.824,
-          humidity: 0,
+          dateTime:   "2021-01-23 02:32:06",
+          latitude:   56.6375,
+          longitude:  60.824,
+          humidity:   0,
           values: {
             temperature: 27.884,
-            pressure: 0,
-            humidity: 0
+            pressure:    0,
+            humidity:    0
           }
         }
       ],
-      host: '',
-      login: '',
-      password: '',
-      valid: false,
-      rules: {
-        form: [
-          (v) => !!v || "Поле не может быть пустым",
-        ],
-      },
-      settings: {
-        lang: "ru_RU",
-        coordorder: "latlong",
-        version: "2.1",
-      },
     };
   },
   async mounted() {
     this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData')) ? JSON.parse(localStorage.getItem('favoritesData')) : []
 
-    let DbHost = localStorage.getItem('DbHost')
-    let DbLogin = localStorage.getItem('DbLogin')
-    let DbPassword = localStorage.getItem('DbPassword')
+    this.DbHost     = localStorage.getItem('DbHost')
+    this.DbLogin    = localStorage.getItem('DbLogin')
+    this.DbPassword = localStorage.getItem('DbPassword')
+
+    let DbHost     = this.DbHost
+    let DbLogin    = this.DbLogin
+    let DbPassword = this.DbPassword
 
     if (DbHost, DbLogin, DbPassword) {
       let DbObj = {
-        host: DbHost,
-        login: DbLogin,
+        host:     DbHost,
+        login:    DbLogin,
         password: DbPassword
       }
       await this.$store.dispatch("getDataSensors", DbObj);
@@ -338,6 +397,7 @@ export default {
     let dataSensor = await this.$store.getters.dataSensors;
     this.surfaceNew = dataSensor;
     this.formatterData();
+
     setInterval(() => {
         this.updateData();
       }, 1000*60*3)
@@ -346,7 +406,7 @@ export default {
     surfaceNew: function() {
       this.formatterData();
     },
-  changeFavorite: function() {
+    changeFavorite: function() {
       this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData')) ? JSON.parse(localStorage.getItem('favoritesData')) : []
     }
   },
@@ -361,6 +421,12 @@ export default {
 
       await this.$store.dispatch("getDataSensors", formChangeSource)
       let dataSensor = await this.$store.getters.dataSensors;
+      let status = await this.$store.getters.status;
+      if (status === 'ok') {
+        this.$dialog.notify.success(`Подключение установлено`);
+      } else {
+        this.$dialog.notify.error(`Подключение не установлено`);
+      }
       this.surfaceNew = dataSensor;
 
       this.host       = ''
@@ -379,16 +445,17 @@ export default {
       })
       let finallArr = favoriteFinal.map((e, index) => {
                 return {
-                  id: index + 1,
-                  host: e.host,
-                  login: e.login,
+                  id:       index + 1,
+                  host:     e.host,
+                  login:    e.login,
                   password: e.password,
-                  date: e.date
+                  date:     e.date
                 }
               })
       localStorage.removeItem('favoritesData')
       localStorage.setItem('favoritesData', JSON.stringify(finallArr))
       this.itemsFavorites = JSON.parse(localStorage.getItem('favoritesData'))
+      this.$dialog.notify.info(`Подключение удалено`);
     },
     titleSwithSave(isSwitch) {
       return isSwitch ? 'Да' : 'Нет';
@@ -403,6 +470,12 @@ export default {
 
       await this.$store.dispatch("getDataSensors", formChangeSource)
       let dataSensor = await this.$store.getters.dataSensors;
+      let status = await this.$store.getters.status;
+      if (status === 'ok') {
+        this.$dialog.notify.success(`Подключение установлено`);
+      } else {
+        this.$dialog.notify.error(`Подключение не установлено`);
+      }
       this.surfaceNew = dataSensor;
 
       this.host       = ''
@@ -410,10 +483,15 @@ export default {
       this.password   = ''
       this.switchSave = false
       
+      this.$refs.form.reset();
       this.closeDialog()
     },
     closeDialog() {
+      this.$refs.form.reset();
       this.$emit('close')
+    },
+    closeNowDialog() {
+      this.$emit('closeNow')
     },
     closeFavoriteDialog() {
       this.$emit('closeFavorite')
@@ -448,7 +526,7 @@ export default {
       this.dataBillboard = dataBillboard
     },
     setChartData(nameSensor) {
-      let arrGraph = [];
+      let arrGraph    = [];
       let arrHumidity = [];
       let arrPressure = [];
 
@@ -482,25 +560,25 @@ export default {
 
       let preDataset = [
         {
-            label: 'Температура',
-            borderColor: 'rgba(97, 179, 222, 1)',
+            label:            'Температура',
+            borderColor:      'rgba(97, 179, 222, 1)',
             pointBorderColor: 'rgba(238, 97, 35, 1)',
-            fill: false,
-            data: arrGraph
+            fill:             false,
+            data:             arrGraph
           },
           {
-            label: 'Влажность',
-            borderColor: '#FFCCBB',
+            label:            'Влажность',
+            borderColor:      '#FFCCBB',
             pointBorderColor: '#6EB5C0',
-            fill: false,
-            data: arrHumidity
+            fill:             false,
+            data:             arrHumidity
           },
           {
-            label: 'Давление',
-            borderColor: '#EDAE01',
+            label:            'Давление',
+            borderColor:      '#EDAE01',
             pointBorderColor: '#D61800',
-            fill: false,
-            data: arrPressure
+            fill:             false,
+            data:             arrPressure
           }
       ]
 

@@ -7,10 +7,14 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     dataSensors: [],
+    status: ''
   },
   mutations: {
     setDataSensors(state, data) {
       state.dataSensors = data
+    },
+    setStatus(state, data) {
+      state.status = data
     }
   },
   actions: {
@@ -37,10 +41,11 @@ export default new Vuex.Store({
             .then((res) => res.data)
             .catch((err) => console.log(err.response))
 
-        if (data) {
+        if (data && Array.isArray(data)) {
           commit('setDataSensors', data);
+          commit('setStatus', 'ok');
         } else {
-          commit('setDataSensors', []);
+          commit('setStatus', 'fail');
         }
       } else {
         let login    = formDb ? formDb.login    : LocalLogin,
@@ -89,20 +94,22 @@ export default new Vuex.Store({
           }
         }
 
-        if (data) {         
+        if (data && Array.isArray(data)) {         
           if (formDb && host != LocalHost && login != LocalLogin && password != LocalPassword) {
             localStorage.setItem('DbHost', host)
             localStorage.setItem('DbLogin', login)
             localStorage.setItem('DbPassword', password)
           }
           commit('setDataSensors', data);
+          commit('setStatus', 'ok');
         } else {
-          commit('setDataSensors', []);
+          commit('setStatus', 'fail');
         }
       }
     }
   },
   getters: {
     dataSensors: state => state.dataSensors,
+    status: state => state.status,
   },
 })
