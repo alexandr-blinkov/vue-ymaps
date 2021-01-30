@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d21a3d2"],{bb51:function(n,e,a){"use strict";a.r(e);var t=function(){var n=this,e=n.$createElement,a=n._self._c||e;return a("ya-maps")},s=[],c=a("b039"),o={name:"Home",components:{YaMaps:c["a"]}},u=o,l=a("2877"),p=Object(l["a"])(u,t,s,!1,null,null,null);e["default"]=p.exports}}]);
+//# sourceMappingURL=chunk-2d21a3d2.0682d719.js.map

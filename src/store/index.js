@@ -42,6 +42,9 @@ export default new Vuex.Store({
             .catch((err) => console.log(err.response))
 
         if (data && Array.isArray(data)) {
+          localStorage.setItem('DbHost', 'http://188.226.32.141/records')
+          localStorage.setItem('DbLogin', 'front')
+          localStorage.setItem('DbPassword', 'Qwe753951')
           commit('setDataSensors', data);
           commit('setStatus', 'ok');
         } else {

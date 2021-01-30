@@ -398,6 +398,10 @@ export default {
     this.surfaceNew = dataSensor;
     this.formatterData();
 
+    this.DbHost     = localStorage.getItem('DbHost')
+    this.DbLogin    = localStorage.getItem('DbLogin')
+    this.DbPassword = localStorage.getItem('DbPassword')
+
     setInterval(() => {
         this.updateData();
       }, 1000*60*3)
@@ -423,6 +427,9 @@ export default {
       let dataSensor = await this.$store.getters.dataSensors;
       let status = await this.$store.getters.status;
       if (status === 'ok') {
+        this.DbHost     = localStorage.getItem('DbHost')
+        this.DbLogin    = localStorage.getItem('DbLogin')
+        this.DbPassword = localStorage.getItem('DbPassword')
         this.$dialog.notify.success(`Подключение установлено`);
       } else {
         this.$dialog.notify.error(`Подключение не установлено`);
@@ -472,6 +479,9 @@ export default {
       let dataSensor = await this.$store.getters.dataSensors;
       let status = await this.$store.getters.status;
       if (status === 'ok') {
+        this.DbHost     = localStorage.getItem('DbHost')
+        this.DbLogin    = localStorage.getItem('DbLogin')
+        this.DbPassword = localStorage.getItem('DbPassword')
         this.$dialog.notify.success(`Подключение установлено`);
       } else {
         this.$dialog.notify.error(`Подключение не установлено`);
